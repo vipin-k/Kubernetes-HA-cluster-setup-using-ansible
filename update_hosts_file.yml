@@ -1,0 +1,17 @@
+---
+- name: Generate Hosts File
+  hosts: k8s
+  become: true
+  gather_facts: true
+  vars:
+    my_file: /etc/hosts
+    my_template: templates/hosts.j2
+  tasks:
+    - name: Create "{{ my_file }}"
+      template:
+        src: "{{ my_template }}"
+        dest: "{{ my_file }}"
+        owner: root
+        group: root
+        mode: "0644"
+

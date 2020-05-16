@@ -1,0 +1,19 @@
+---
+- name: Generate Hosts File
+  hosts: member
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Generated token - 1.
+      local_action: shell sed -n 73,75p ./token > ./mastertoken
+    - name: Copy master token
+      copy:
+        src: /opt/k8s/mastertoken
+        dest: /tmp/join-command.sh
+        owner: root
+        group: root
+        mode: '0777'
+    - name: Generated token - 2.
+      shell: sed -i 's/\b:80\b/& --apiserver-advertise-address {{ansible_eth1.ipv4.address}} /' /tmp/join-command.sh
+    - name: Add new Kubernetes master member
+      command: sh /tmp/join-command.sh

@@ -1,0 +1,58 @@
+---
+- name: Generate Hosts File
+  hosts: worker
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Upgrade all packages
+      yum: name=* state=latest
+    - name: Install Docker
+      package:
+        name: docker
+        state: latest
+      become: yes
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+      become: yes
+    - name: Disable SELinux
+      selinux:
+        state: disabled
+    - name: Reboot the machine
+      reboot:
+    - name: Copy /etc/yum.repos.d/kubernetes.repo
+      copy:
+        src: /opt/ansible/files/kubernetes.repo
+        dest: /etc/yum.repos.d/kubernetes.repo
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Upgrade all packages
+      yum: name=* state=latest
+    - name: Install Kubernetes Package
+      yum:
+        name: "{{packages}}"
+        state: present
+      vars:
+        packages:
+          - kubelet
+          - kubeadm
+          - kubectl
+    - name: Enable / Start kubelet Service
+      service:
+        name: kubelet
+        state: started
+        enabled: yes
+    - name: Letting iptables see bridged traffic
+      copy:
+        src: /opt/k8s/files/k8s.conf
+        dest: /etc/sysctl.d/k8s.conf
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Reload sysctl config for iptables
+      command: sysctl --system
+    - name: Disable SWAP
+      command: swapoff -a
